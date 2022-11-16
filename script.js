@@ -22,7 +22,7 @@ function createModel() {
     // Add a single input layer
     model.add(tf.layers.dense({inputShape: [1], units: 1, useBias: true}));
 
-    // hidden layer추가 (딥러닝)
+    // hidden layer 추가(딥러닝)
     model.add(tf.layers.dense({units: 1, useBias: true}));
 
     // Add an output layer
@@ -51,6 +51,11 @@ function convertToTensor(data) {
 
         const inputTensor = tf.tensor2d(inputs, [inputs.length, 1]);
         const labelTensor = tf.tensor2d(labels, [labels.length, 1]);
+
+        return {
+            inputs: inputTensor,
+            labels: labelTensor
+        }
 
         //Step 3. Normalize the data to the range 0 - 1 using min-max scaling
         const inputMax = inputTensor.max();
@@ -82,7 +87,7 @@ async function trainModel(model, inputs, labels) {
     });
 
     const batchSize = 32;
-    const epochs = 200;
+    const epochs = 300;
 
     return await model.fit(inputs, labels, {
         batchSize,
@@ -103,17 +108,12 @@ function testModel(model, inputData, normalizationData) {
     // We un-normalize the data by doing the inverse of the min-max scaling
     // that we did earlier.
     const [xs, preds] = tf.tidy(() => {
+        let xs = [];
+        for(let x=0; x<=30; x+=0.5)
+            xs.push(x);
 
-        const xs = tf.linspace(0, 1, 100);
-        const preds = model.predict(xs.reshape([100, 1]));
-
-        const unNormXs = xs
-            .mul(inputMax.sub(inputMin))
-            .add(inputMin);
-
-        const unNormPreds = preds
-            .mul(labelMax.sub(labelMin))
-            .add(labelMin);
+        const xsTensor = tf.tensor2d(xs, [xs.length, 1]);
+        const preds = model.predict(xsTensor);
 
         // Un-normalize the data
         return [unNormXs.dataSync(), unNormPreds.dataSync()];
@@ -128,7 +128,7 @@ function testModel(model, inputData, normalizationData) {
     }));
 
     tfvis.render.scatterplot(
-        {name: '예측데이터 확인하기'},
+        {name: '예측 데이터 확인하기'},
         {values: [originalPoints, predictedPoints], series: ['y=2x+1', '예측']},
         {
             xLabel: 'x',
@@ -147,12 +147,12 @@ async function run() {
     }));
 
     tfvis.render.scatterplot(
-        {name: 'x v yy'},
+        {name: 'y=2x+1'},
         {values},
         {
             xLabel: 'x',
             yLabel: 'y',
-            height: 300
+            height: 500
         }
     );
 
